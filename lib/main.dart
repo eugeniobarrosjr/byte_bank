@@ -16,6 +16,14 @@ class ByteBankApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        primaryColor: Colors.green[900],
+        accentColor: Colors.blue[700],
+        buttonTheme: ButtonThemeData(
+          buttonColor: Colors.blue[700],
+          textTheme: ButtonTextTheme.primary,
+        ),
+      ),
       debugShowCheckedModeBanner: false,
       title: 'ByteBank',
       home: TransferList(),
@@ -23,7 +31,7 @@ class ByteBankApp extends StatelessWidget {
   }
 }
 
-class TransferForm extends StatelessWidget {
+class TransferForm extends StatefulWidget {
   final TextEditingController _accountNumberController =
       TextEditingController();
 
@@ -40,29 +48,36 @@ class TransferForm extends StatelessWidget {
   }
 
   @override
+  _TransferFormState createState() => _TransferFormState();
+}
+
+class _TransferFormState extends State<TransferForm> {
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Criando trasferência'),
       ),
-      body: Column(
-        children: <Widget>[
-          FormEditor(
-            controller: _accountNumberController,
-            labelText: 'Número da Conta',
-            hint: '0000',
-          ),
-          FormEditor(
-            controller: _valueController,
-            labelText: 'Valor',
-            hint: '0.00',
-            icon: Icons.monetization_on,
-          ),
-          RaisedButton(
-            onPressed: () => this._createTransfer(context),
-            child: Text('Confirmar'),
-          ),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            FormEditor(
+              controller: widget._accountNumberController,
+              labelText: 'Número da Conta',
+              hint: '0000',
+            ),
+            FormEditor(
+              controller: widget._valueController,
+              labelText: 'Valor',
+              hint: '0.00',
+              icon: Icons.monetization_on,
+            ),
+            RaisedButton(
+              onPressed: () => widget._createTransfer(context),
+              child: Text('Confirmar'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -97,13 +112,13 @@ class FormEditor extends StatelessWidget {
 }
 
 class TransferList extends StatefulWidget {
+  final List<Transfer> _transfers = List();
+
   @override
   _TransferListState createState() => _TransferListState();
 }
 
 class _TransferListState extends State<TransferList> {
-  final List<Transfer> _transfers = List();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -120,15 +135,21 @@ class _TransferListState extends State<TransferList> {
             ),
           );
 
-          response.then((transfer) => debugPrint('$transfer'));
+          response.then((transfer) {
+            if (transfer != null) {
+              setState(() {
+                widget._transfers.add(transfer);
+              });
+            }
+          });
         },
       ),
       body: ListView.builder(
         itemBuilder: (BuildContext context, int index) {
-          final Transfer transfer = _transfers[index];
+          final Transfer transfer = widget._transfers[index];
           return TransferItem(transfer);
         },
-        itemCount: _transfers.length,
+        itemCount: widget._transfers.length,
       ),
     );
   }
