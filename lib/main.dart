@@ -18,7 +18,7 @@ class ByteBankApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ByteBank',
-      home: TransferForm(),
+      home: TransferList(),
     );
   }
 }
@@ -29,6 +29,16 @@ class TransferForm extends StatelessWidget {
 
   final TextEditingController _valueController = TextEditingController();
 
+  void _createTransfer(BuildContext context) {
+    final int accountNumber = int.tryParse(_accountNumberController.text);
+    final double value = double.tryParse(_valueController.text);
+
+    if (accountNumber != null && value != null) {
+      final transfer = Transfer(value, accountNumber);
+      Navigator.pop(context, transfer);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,37 +47,19 @@ class TransferForm extends StatelessWidget {
       ),
       body: Column(
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              controller: _accountNumberController,
-              keyboardType: TextInputType.number,
-              style: TextStyle(
-                fontSize: 16.0,
-              ),
-              decoration: InputDecoration(
-                labelText: 'Número da conta',
-                hintText: '0000',
-              ),
-            ),
+          FormEditor(
+            controller: _accountNumberController,
+            labelText: 'Número da Conta',
+            hint: '0000',
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              controller: _valueController,
-              keyboardType: TextInputType.numberWithOptions(signed: true),
-              style: TextStyle(
-                fontSize: 16.0,
-              ),
-              decoration: InputDecoration(
-                icon: Icon(Icons.monetization_on),
-                labelText: 'Valor',
-                hintText: '0.00',
-              ),
-            ),
+          FormEditor(
+            controller: _valueController,
+            labelText: 'Valor',
+            hint: '0.00',
+            icon: Icons.monetization_on,
           ),
           RaisedButton(
-            onPressed: () {},
+            onPressed: () => this._createTransfer(context),
             child: Text('Confirmar'),
           ),
         ],
@@ -76,7 +68,42 @@ class TransferForm extends StatelessWidget {
   }
 }
 
-class TransferList extends StatelessWidget {
+class FormEditor extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final String labelText;
+  final IconData icon;
+
+  FormEditor({this.controller, this.labelText, this.hint, this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.numberWithOptions(signed: true),
+        style: TextStyle(
+          fontSize: 16.0,
+        ),
+        decoration: InputDecoration(
+          icon: icon != null ? Icon(icon) : null,
+          labelText: labelText,
+          hintText: hint,
+        ),
+      ),
+    );
+  }
+}
+
+class TransferList extends StatefulWidget {
+  @override
+  _TransferListState createState() => _TransferListState();
+}
+
+class _TransferListState extends State<TransferList> {
+  final List<Transfer> _transfers = List();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,13 +112,23 @@ class TransferList extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {},
+        onPressed: () {
+          final Future<Transfer> response = Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (BuildContext context) => TransferForm(),
+            ),
+          );
+
+          response.then((transfer) => debugPrint('$transfer'));
+        },
       ),
-      body: Column(
-        children: <Widget>[
-          TransferItem(Transfer(2000.00, 3231312)),
-          TransferItem(Transfer(2012.00, 32312)),
-        ],
+      body: ListView.builder(
+        itemBuilder: (BuildContext context, int index) {
+          final Transfer transfer = _transfers[index];
+          return TransferItem(transfer);
+        },
+        itemCount: _transfers.length,
       ),
     );
   }
